@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GML Edge List Parser</title>
+    <title>GraphCore Pro - Edge List Parser</title>
     <style>
         * {
             margin: 0;
@@ -12,514 +12,349 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0F0F0F;
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 90% 10%, rgba(255, 184, 108, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 10% 90%, rgba(132, 250, 176, 0.2) 0%, transparent 50%),
-                linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%);
-            background-size: 
-                800px 600px,
-                700px 500px,
-                900px 700px,
-                600px 400px,
-                1000px 800px,
-                100% 100%;
-            background-position:
-                0% 0%,
-                100% 100%,
-                50% 50%,
-                80% 20%,
-                20% 80%,
-                0% 0%;
-            animation: backgroundShift 20s ease-in-out infinite;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
             overflow-x: hidden;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    transparent,
-                    transparent 2px,
-                    rgba(255, 255, 255, 0.01) 2px,
-                    rgba(255, 255, 255, 0.01) 4px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 2px,
-                    rgba(255, 255, 255, 0.01) 2px,
-                    rgba(255, 255, 255, 0.01) 4px
-                );
-            pointer-events: none;
-            z-index: 1;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
         }
 
-        body::after {
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #ffffff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 0.3s forwards;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            padding: 2rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
             content: '';
-            position: fixed;
+            position: absolute;
             top: -50%;
             left: -50%;
             width: 200%;
             height: 200%;
-            background: 
-                radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: sparkle 40s linear infinite;
-            pointer-events: none;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s linear infinite;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            position: relative;
             z-index: 1;
         }
 
-        @keyframes backgroundShift {
-            0%, 100% {
-                background-position:
-                    0% 0%,
-                    100% 100%,
-                    50% 50%,
-                    80% 20%,
-                    20% 80%,
-                    0% 0%;
-            }
-            25% {
-                background-position:
-                    10% 10%,
-                    90% 90%,
-                    60% 40%,
-                    70% 30%,
-                    30% 70%,
-                    0% 0%;
-            }
-            50% {
-                background-position:
-                    20% 20%,
-                    80% 80%,
-                    40% 60%,
-                    60% 40%,
-                    40% 60%,
-                    0% 0%;
-            }
-            75% {
-                background-position:
-                    10% 30%,
-                    90% 70%,
-                    30% 70%,
-                    90% 10%,
-                    10% 90%,
-                    0% 0%;
-            }
-        }
-
-        @keyframes sparkle {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0.5;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                transform: translate(-50px, -50px) rotate(360deg);
-                opacity: 0.5;
-            }
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(25px) saturate(180%);
-            border-radius: 28px;
-            box-shadow: 
-                0 25px 80px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            padding: 50px;
-            max-width: 900px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+        .card-description {
+            opacity: 0.9;
             position: relative;
-            z-index: 10;
+            z-index: 1;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .input-section {
+            padding: 2.5rem;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .output-section {
+            padding: 2.5rem;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        }
+
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #fafbfc, #f8fafc);
+            position: relative;
             overflow: hidden;
         }
 
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.8) 20%, 
-                rgba(255, 255, 255, 0.8) 80%, 
-                transparent
-            );
-            animation: shimmer 3s ease-in-out infinite;
+        .file-upload-area:hover {
+            border-color: #4f46e5;
+            background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.15);
         }
 
-        .container::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, 
-                rgba(120, 119, 198, 0.3),
-                rgba(255, 119, 198, 0.3),
-                rgba(120, 219, 255, 0.3),
-                rgba(255, 184, 108, 0.3),
-                rgba(132, 250, 176, 0.3)
-            );
-            background-size: 300% 300%;
-            border-radius: 30px;
-            animation: gradientShift 8s ease infinite;
-            z-index: -1;
-            filter: blur(1px);
+        .file-upload-area.dragover {
+            border-color: #7c3aed;
+            background: linear-gradient(135deg, #f3f0ff, #ede9fe);
+            transform: scale(1.02);
         }
 
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        h1 {
-            text-align: center;
-            color: #ffffff;
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, 
-                #ffffff 0%,
-                #f0f4ff 25%,
-                #e6f0ff 50%,
-                #dbeafe 75%,
-                #bfdbfe 100%
-            );
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-            position: relative;
-        }
-
-        h1::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-            animation: titleGlow 4s ease-in-out infinite;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        @keyframes titleGlow {
-            0%, 100% { opacity: 0; }
-            50% { opacity: 1; }
-        }
-
-        .subtitle {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1.1rem;
-            margin-bottom: 40px;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
-
-        .upload-section {
-            margin-bottom: 30px;
-        }
-
-        .file-upload {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .file-label {
+        .file-icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px;
-            border: 3px dashed #cbd5e0;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            color: white;
+            font-size: 1.5rem;
         }
 
-        .file-label::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-            transition: left 0.5s;
-        }
-
-        .file-label:hover::before {
-            left: 100%;
-        }
-
-        .file-label:hover {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
-        }
-
-        .upload-icon {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 10px;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+        .file-input {
+            display: none;
         }
 
         .upload-text {
-            color: #4a5568;
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: 1.1rem;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .upload-subtext {
-            color: #718096;
+            color: #6b7280;
             font-size: 0.9rem;
-            margin-top: 5px;
         }
 
-        .file-name {
-            margin-top: 20px;
-            padding: 15px 25px;
-            background: linear-gradient(135deg, 
-                rgba(72, 187, 120, 0.9) 0%, 
-                rgba(56, 161, 105, 0.9) 100%
-            );
-            backdrop-filter: blur(10px);
+        .btn {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
-            border-radius: 30px;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
             font-weight: 600;
-            text-align: center;
-            box-shadow: 
-                0 8px 25px rgba(72, 187, 120, 0.4),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-            display: none;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .parse-btn {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.9) 0%, 
-                rgba(118, 75, 162, 0.9) 100%
-            );
-            backdrop-filter: blur(10px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 18px 45px;
-            border-radius: 30px;
-            font-size: 1.15rem;
-            font-weight: 700;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 
-                0 10px 30px rgba(102, 126, 234, 0.4),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-            display: block;
-            margin: 25px auto;
-            opacity: 0.6;
-            transform: scale(0.95);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            margin-top: 1rem;
             position: relative;
             overflow: hidden;
         }
 
-        .parse-btn::before {
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn::before {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.2), 
-                transparent
-            );
-            transition: left 0.6s;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
         }
 
-        .parse-btn:enabled {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .parse-btn:enabled:hover {
-            transform: translateY(-4px) scale(1.05);
-            box-shadow: 
-                0 20px 40px rgba(102, 126, 234, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.2);
-        }
-
-        .parse-btn:enabled:hover::before {
+        .btn:hover::before {
             left: 100%;
         }
 
-        .parse-btn:active {
-            transform: translateY(-2px) scale(1.02);
+        .format-options {
+            margin-top: 2rem;
         }
 
-        .results-section {
-            margin-top: 30px;
-        }
-
-        .results-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .results-title {
-            color: #ffffff;
-            font-size: 1.4rem;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .edge-count {
-            background: linear-gradient(135deg, 
-                rgba(66, 153, 225, 0.9) 0%, 
-                rgba(49, 130, 206, 0.9) 100%
-            );
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 0.95rem;
+        .format-title {
+            font-size: 1.1rem;
             font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+            color: #374151;
+            margin-bottom: 1rem;
         }
 
-        .output-box {
-            background: linear-gradient(145deg, 
-                rgba(26, 32, 44, 0.95) 0%, 
-                rgba(45, 55, 72, 0.95) 100%
-            );
-            backdrop-filter: blur(15px);
-            border-radius: 16px;
-            padding: 25px;
-            height: 320px;
-            overflow-y: auto;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 14px;
-            line-height: 1.8;
-            color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 
-                inset 0 2px 10px rgba(0, 0, 0, 0.4),
-                0 8px 25px rgba(0, 0, 0, 0.3);
-            display: none;
+        .format-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .format-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
             position: relative;
         }
 
-        .output-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.3), 
-                transparent
-            );
+        .format-card:hover {
+            border-color: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.1);
         }
 
-        .output-box::-webkit-scrollbar {
+        .format-card.active {
+            border-color: #4f46e5;
+            background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+        }
+
+        .format-name {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .format-example {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #6b7280;
+            background: #f9fafb;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .output-container {
+            background: #1f2937;
+            border-radius: 16px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-height: 600px;
+        }
+
+        .output-header {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #4b5563;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .output-title {
+            color: white;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .stats {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .output-content {
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #e5e7eb;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .output-content::-webkit-scrollbar {
             width: 8px;
         }
 
-        .output-box::-webkit-scrollbar-track {
-            background: #2d3748;
+        .output-content::-webkit-scrollbar-track {
+            background: #374151;
+        }
+
+        .output-content::-webkit-scrollbar-thumb {
+            background: #6b7280;
             border-radius: 4px;
-        }
-
-        .output-box::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 4px;
-        }
-
-        .output-line {
-            padding: 2px 0;
-            border-left: 3px solid transparent;
-            padding-left: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .output-line:hover {
-            background: rgba(102, 126, 234, 0.1);
-            border-left-color: #667eea;
         }
 
         .loading {
             display: none;
             text-align: center;
-            margin: 20px 0;
+            padding: 2rem;
         }
 
         .spinner {
-            border: 3px solid #e2e8f0;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
             width: 40px;
             height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            width: 3rem;
+            height: 3rem;
+            margin: 0 auto 1rem;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
 
         @keyframes spin {
@@ -527,172 +362,291 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-message {
-            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin: 15px 0;
-            font-weight: 600;
-            display: none;
-            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .success-message {
-            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
-            padding: 15px 20px;
+            padding: 1rem 1.5rem;
             border-radius: 12px;
-            margin: 15px 0;
-            font-weight: 600;
+            margin-bottom: 1rem;
             display: none;
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-section {
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+
+            .format-grid {
+                grid-template-columns: 1fr;
+            }
+
             .container {
-                padding: 25px;
-                margin: 10px;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .file-label {
-                padding: 20px 15px;
-            }
-            
-            .upload-icon {
-                font-size: 2.5rem;
+                padding: 1rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>GML Edge List Parser</h1>
-        <p class="subtitle">Upload your GML file and extract edge relationships with style</p>
-        
-        <div class="upload-section">
-            <div class="file-upload">
-                <input type="file" id="gmlFile" class="file-input" accept=".gml" />
-                <label for="gmlFile" class="file-label">
-                    <div>
-                        <div class="upload-icon">📊</div>
-                        <div class="upload-text">Drop your GML file here</div>
-                        <div class="upload-subtext">or click to browse</div>
+        <div class="header">
+            <h1 class="logo">GraphCore Pro</h1>
+            <p class="subtitle">Professional Edge List Parser & Network Analysis Tool</p>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header">
+                <h2 class="card-title">Parse Network Edge Lists</h2>
+                <p class="card-description">Upload your network data files and convert them to standardized edge list format with advanced parsing capabilities</p>
+            </div>
+
+            <div class="content-grid">
+                <div class="input-section">
+                    <div class="success-message" id="successMessage">
+                        <span>✓</span>
+                        <span id="successText"></span>
                     </div>
-                </label>
+                    
+                    <div class="error-message" id="errorMessage">
+                        <span>⚠</span>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <div class="file-upload-area" id="uploadArea">
+                        <div class="file-icon">📄</div>
+                        <div class="upload-text">Drop your edge list file here</div>
+                        <div class="upload-subtext">or click to browse (.txt, .gml, .csv files)</div>
+                        <input type="file" id="fileInput" class="file-input" accept=".txt,.gml,.csv">
+                        <button class="btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+                    </div>
+
+                    <div class="format-options">
+                        <h3 class="format-title">Supported Formats</h3>
+                        <div class="format-grid">
+                            <div class="format-card active" data-format="standard">
+                                <div class="format-name">Standard Format</div>
+                                <div class="format-example">source target<br>1 2<br>2 3</div>
+                            </div>
+                            <div class="format-card" data-format="weighted">
+                                <div class="format-name">Weighted Format</div>
+                                <div class="format-example">source target weight<br>1 2 0.5<br>2 3 1.2</div>
+                            </div>
+                            <div class="format-card" data-format="csv">
+                                <div class="format-name">CSV Format</div>
+                                <div class="format-example">source,target<br>1,2<br>2,3</div>
+                            </div>
+                            <div class="format-card" data-format="gml">
+                                <div class="format-name">GML-like Format</div>
+                                <div class="format-example">edge [<br>  source 1<br>  target 2<br>]</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="output-section">
+                    <div class="output-container">
+                        <div class="output-header">
+                            <div class="output-title">Parsed Edge List</div>
+                            <div class="stats" id="edgeStats">Ready to parse</div>
+                        </div>
+                        <div class="output-content" id="outputContent">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div>Upload a file to see the parsed edge list</div>
+                                <div style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7;">Supports multiple formats including standard, weighted, CSV, and GML-like structures</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="loading" id="loadingState">
+                        <div class="spinner"></div>
+                        <div>Processing your file...</div>
+                    </div>
+                </div>
             </div>
-            <div id="fileName" class="file-name"></div>
-        </div>
-
-        <button id="parseBtn" class="parse-btn" disabled>Parse GML File</button>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <div>Processing your file...</div>
-        </div>
-
-        <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage"></div>
-
-        <div class="results-section">
-            <div class="results-header" id="resultsHeader" style="display: none;">
-                <div class="results-title">Edge List Output</div>
-                <div class="edge-count" id="edgeCount">0 edges</div>
-            </div>
-            <div class="output-box" id="outputBox"></div>
         </div>
     </div>
 
     <script>
-        const fileInput = document.getElementById('gmlFile');
-        const fileName = document.getElementById('fileName');
-        const parseBtn = document.getElementById('parseBtn');
-        const outputBox = document.getElementById('outputBox');
-        const loading = document.getElementById('loading');
-        const errorMessage = document.getElementById('errorMessage');
+        let currentFormat = 'standard';
+        let parsedEdges = [];
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const outputContent = document.getElementById('outputContent');
+        const edgeStats = document.getElementById('edgeStats');
+        const loadingState = document.getElementById('loadingState');
         const successMessage = document.getElementById('successMessage');
-        const resultsHeader = document.getElementById('resultsHeader');
-        const edgeCount = document.getElementById('edgeCount');
+        const errorMessage = document.getElementById('errorMessage');
 
-        let currentFile = null;
+        // Format selection
+        document.querySelectorAll('.format-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.format-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                currentFormat = card.dataset.format;
+            });
+        });
 
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                currentFile = file;
-                fileName.textContent = `Selected: ${file.name}`;
-                fileName.style.display = 'block';
-                parseBtn.disabled = false;
-                hideMessages();
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
             }
         });
 
-        parseBtn.addEventListener('click', function() {
-            if (!currentFile) return;
-
-            showLoading();
-            hideMessages();
-            outputBox.style.display = 'none';
-            resultsHeader.style.display = 'none';
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const content = e.target.result;
-                    const edges = parseGMLEdgeList(content);
-                    displayResults(edges);
-                    showSuccess(`Successfully parsed ${edges.length} edges from ${currentFile.name}`);
-                } catch (error) {
-                    showError(`Error parsing file: ${error.message}`);
-                }
-                hideLoading();
-            };
-
-            reader.onerror = function() {
-                showError('Error reading file. Please try again.');
-                hideLoading();
-            };
-
-            reader.readAsText(currentFile);
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
         });
 
-        function parseGMLEdgeList(content) {
+        function showMessage(type, text) {
+            hideMessages();
+            const message = type === 'success' ? successMessage : errorMessage;
+            const textElement = type === 'success' ? document.getElementById('successText') : document.getElementById('errorText');
+            textElement.textContent = text;
+            message.style.display = 'flex';
+            setTimeout(hideMessages, 5000);
+        }
+
+        function hideMessages() {
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+        }
+
+        async function handleFile(file) {
+            showLoading();
+            hideMessages();
+
+            try {
+                const text = await file.text();
+                const edges = parseEdgeList(text, currentFormat);
+                
+                if (edges.length === 0) {
+                    throw new Error('No valid edges found in the file');
+                }
+
+                displayResults(edges);
+                showMessage('success', `Successfully parsed ${edges.length} edges from ${file.name}`);
+            } catch (error) {
+                showMessage('error', `Error parsing file: ${error.message}`);
+                showEmptyState();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function parseEdgeList(text, format) {
             const edges = [];
-            const lines = content.split('\n');
+            const lines = text.split('\n');
+
+            if (format === 'gml') {
+                return parseGMLFormat(text);
+            }
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Skip empty lines and comments
+                if (!line || line.startsWith('#') || line.startsWith('%')) {
+                    continue;
+                }
+
+                let parts;
+                
+                // Handle different separators
+                if (line.includes('\t')) {
+                    parts = line.split('\t');
+                } else if (line.includes(',')) {
+                    parts = line.split(',');
+                } else {
+                    parts = line.split(/\s+/);
+                }
+
+                // Need at least source and target
+                if (parts.length >= 2) {
+                    try {
+                        const source = parseInt(parts[0].trim());
+                        const target = parseInt(parts[1].trim());
+                        
+                        if (!isNaN(source) && !isNaN(target)) {
+                            edges.push([source, target]);
+                        }
+                    } catch (e) {
+                        console.warn(`Could not parse line ${i + 1}: ${line}`);
+                    }
+                }
+            }
+
+            return edges;
+        }
+
+        function parseGMLFormat(text) {
+            const edges = [];
+            const lines = text.split('\n');
             let inEdgeBlock = false;
             let currentEdge = {};
 
-            for (let line of lines) {
-                line = line.trim();
+            for (const line of lines) {
+                const trimmed = line.trim();
 
-                // Detect start of an edge block
-                if (line.startsWith('edge')) {
+                if (trimmed.startsWith('edge')) {
                     inEdgeBlock = true;
                     currentEdge = {};
                     continue;
                 }
 
-                // Detect end of an edge block
-                if (inEdgeBlock && line === ']') {
-                    if ('source' in currentEdge && 'target' in currentEdge) {
+                if (inEdgeBlock && trimmed === ']') {
+                    if (currentEdge.source !== undefined && currentEdge.target !== undefined) {
                         edges.push([currentEdge.source, currentEdge.target]);
                     }
                     inEdgeBlock = false;
                     continue;
                 }
 
-                // Parse edge attributes (only source and target)
                 if (inEdgeBlock) {
-                    const parts = line.split(/\s+/);
+                    const parts = trimmed.split(/\s+/);
                     if (parts.length >= 2) {
                         const key = parts[0];
-                        const value = parts[1];
-                        if (key === 'source' || key === 'target') {
-                            currentEdge[key] = parseInt(value);
+                        const value = parseInt(parts[1]);
+                        if ((key === 'source' || key === 'target') && !isNaN(value)) {
+                            currentEdge[key] = value;
                         }
                     }
                 }
@@ -702,94 +656,32 @@
         }
 
         function displayResults(edges) {
-            if (edges.length === 0) {
-                showError('No edges found in the GML file.');
-                return;
-            }
-
-            outputBox.innerHTML = '';
-            edges.forEach(([source, target]) => {
-                const line = document.createElement('div');
-                line.className = 'output-line';
-                line.textContent = `${source} ${target}`;
-                outputBox.appendChild(line);
-            });
-
-            edgeCount.textContent = `${edges.length} edge${edges.length !== 1 ? 's' : ''}`;
-            resultsHeader.style.display = 'flex';
-            outputBox.style.display = 'block';
+            parsedEdges = edges;
+            const output = edges.map(([source, target]) => `${source} ${target}`).join('\n');
+            
+            outputContent.innerHTML = `<div style="color: #e5e7eb;">${output}</div>`;
+            edgeStats.textContent = `${edges.length} edges parsed`;
         }
 
         function showLoading() {
-            loading.style.display = 'block';
+            loadingState.style.display = 'block';
+            outputContent.parentElement.style.display = 'none';
         }
 
         function hideLoading() {
-            loading.style.display = 'none';
+            loadingState.style.display = 'none';
+            outputContent.parentElement.style.display = 'block';
         }
 
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        function showSuccess(message) {
-            successMessage.textContent = message;
-            successMessage.style.display = 'block';
-            setTimeout(() => {
-                successMessage.style.display = 'none';
-            }, 3000);
-        }
-
-        function hideMessages() {
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-        }
-
-        // Drag and drop functionality
-        const fileLabel = document.querySelector('.file-label');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            fileLabel.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            fileLabel.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            fileLabel.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight() {
-            fileLabel.style.borderColor = '#667eea';
-            fileLabel.style.background = 'linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%)';
-        }
-
-        function unhighlight() {
-            fileLabel.style.borderColor = '#cbd5e0';
-            fileLabel.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
-        }
-
-        fileLabel.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-
-            if (files.length > 0) {
-                fileInput.files = files;
-                const event = new Event('change', { bubbles: true });
-                fileInput.dispatchEvent(event);
-            }
+        function showEmptyState() {
+            outputContent.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <div>Upload a file to see the parsed edge list</div>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7;">Supports multiple formats including standard, weighted, CSV, and GML-like structures</div>
+                </div>
+            `;
+            edgeStats.textContent = 'Ready to parse';
         }
     </script>
 </body>
