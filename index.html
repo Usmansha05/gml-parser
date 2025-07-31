@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GraphCore Pro - Edge List Parser</title>
     <style>
+        /* Existing styles remain unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -771,7 +772,11 @@
 
         function displayResults(edges) {
             parsedEdges = edges;
-            const output = edges.map(([source, target]) => `${source} ${target}`).join('\n');
+            // Display with fixed-width columns (8 characters each)
+            let output = "Source       Target      \n";
+            output += edges.map(([source, target]) => 
+                `${String(source).padStart(8)}  ${String(target).padStart(8)}`
+            ).join('\n');
             
             outputContent.innerHTML = `<div style="color: #e5e7eb;">${output}</div>`;
             edgeStats.textContent = `${edges.length} edges parsed`;
@@ -805,8 +810,10 @@
             }
 
             try {
-                // Create the content for the file
-                const content = parsedEdges.map(([source, target]) => `${source} ${target}`).join('\n');
+                // Create the content for the file with fixed-width columns
+                const content = "Source       Target      \n" + parsedEdges.map(([source, target]) => 
+                    `${String(source).padStart(8)}  ${String(target).padStart(8)}`
+                ).join('\n');
                 
                 // Create a blob with the content
                 const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
