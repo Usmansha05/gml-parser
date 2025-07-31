@@ -175,6 +175,9 @@
             margin-top: 1rem;
             position: relative;
             overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .btn:hover {
@@ -184,6 +187,13 @@
 
         .btn:active {
             transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn::before {
@@ -197,8 +207,16 @@
             transition: left 0.5s;
         }
 
-        .btn:hover::before {
+        .btn:hover:not(:disabled)::before {
             left: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
         }
 
         .format-options {
@@ -268,7 +286,7 @@
             padding: 1rem 1.5rem;
             border-bottom: 1px solid #4b5563;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
         }
 
@@ -281,6 +299,27 @@
         .stats {
             color: #9ca3af;
             font-size: 0.9rem;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            display: none;
+            align-items: center;
+            gap: 0.3rem;
+            margin-left: 1rem;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
         }
 
         .output-content {
@@ -406,6 +445,16 @@
             .container {
                 padding: 1rem;
             }
+
+            .output-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .download-btn {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
@@ -439,7 +488,10 @@
                         <div class="upload-text">Drop your edge list file here</div>
                         <div class="upload-subtext">or click to browse (.txt, .gml, .csv files)</div>
                         <input type="file" id="fileInput" class="file-input" accept=".txt,.gml,.csv">
-                        <button class="btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+                        <button class="btn" onclick="document.getElementById('fileInput').click()">
+                            <span>📁</span>
+                            Choose File
+                        </button>
                     </div>
 
                     <div class="format-options">
@@ -469,7 +521,13 @@
                     <div class="output-container">
                         <div class="output-header">
                             <div class="output-title">Parsed Edge List</div>
-                            <div class="stats" id="edgeStats">Ready to parse</div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="stats" id="edgeStats">Ready to parse</div>
+                                <button class="download-btn" id="downloadBtn" onclick="downloadEdgeList()">
+                                    <span>⬇</span>
+                                    Download .txt
+                                </button>
+                            </div>
                         </div>
                         <div class="output-content" id="outputContent">
                             <div class="empty-state">
@@ -492,6 +550,7 @@
     <script>
         let currentFormat = 'standard';
         let parsedEdges = [];
+        let originalFileName = '';
 
         // File upload handling
         const uploadArea = document.getElementById('uploadArea');
@@ -501,6 +560,7 @@
         const loadingState = document.getElementById('loadingState');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
+        const downloadBtn = document.getElementById('downloadBtn');
 
         // Format selection
         document.querySelectorAll('.format-card').forEach(card => {
@@ -553,6 +613,7 @@
         async function handleFile(file) {
             showLoading();
             hideMessages();
+            originalFileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
 
             try {
                 const text = await file.text();
@@ -564,9 +625,11 @@
 
                 displayResults(edges);
                 showMessage('success', `Successfully parsed ${edges.length} edges from ${file.name}`);
+                downloadBtn.style.display = 'flex'; // Show download button
             } catch (error) {
                 showMessage('error', `Error parsing file: ${error.message}`);
                 showEmptyState();
+                downloadBtn.style.display = 'none'; // Hide download button
             } finally {
                 hideLoading();
             }
@@ -574,39 +637,79 @@
 
         function parseEdgeList(text, format) {
             const edges = [];
-            const lines = text.split('\n');
+            const lines = text.split(/\r?\n/); // Handle both \r\n and \n line endings
 
             if (format === 'gml') {
                 return parseGMLFormat(text);
             }
 
+            let headerSkipped = false;
+
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 
                 // Skip empty lines and comments
-                if (!line || line.startsWith('#') || line.startsWith('%')) {
+                if (!line || line.startsWith('#') || line.startsWith('%') || line.startsWith('//')) {
+                    continue;
+                }
+
+                // Skip potential header lines (common in CSV files)
+                if (!headerSkipped && (line.toLowerCase().includes('source') || line.toLowerCase().includes('from') || line.toLowerCase().includes('node'))) {
+                    headerSkipped = true;
                     continue;
                 }
 
                 let parts;
                 
-                // Handle different separators
+                // Handle different separators with more flexibility
                 if (line.includes('\t')) {
-                    parts = line.split('\t');
+                    parts = line.split('\t').map(p => p.trim());
                 } else if (line.includes(',')) {
-                    parts = line.split(',');
+                    parts = line.split(',').map(p => p.trim());
+                } else if (line.includes(';')) {
+                    parts = line.split(';').map(p => p.trim());
+                } else if (line.includes('|')) {
+                    parts = line.split('|').map(p => p.trim());
                 } else {
-                    parts = line.split(/\s+/);
+                    parts = line.split(/\s+/).map(p => p.trim());
                 }
+
+                // Filter out empty parts
+                parts = parts.filter(p => p.length > 0);
 
                 // Need at least source and target
                 if (parts.length >= 2) {
                     try {
-                        const source = parseInt(parts[0].trim());
-                        const target = parseInt(parts[1].trim());
+                        // Try to parse as integers first
+                        let source = parts[0].trim();
+                        let target = parts[1].trim();
                         
-                        if (!isNaN(source) && !isNaN(target)) {
-                            edges.push([source, target]);
+                        // Remove quotes if present
+                        source = source.replace(/['"]/g, '');
+                        target = target.replace(/['"]/g, '');
+                        
+                        // Try parsing as numbers, but also accept strings
+                        let sourceNum = parseInt(source);
+                        let targetNum = parseInt(target);
+                        
+                        // If parsing as integers fails, try as floats
+                        if (isNaN(sourceNum)) {
+                            sourceNum = parseFloat(source);
+                        }
+                        if (isNaN(targetNum)) {
+                            targetNum = parseFloat(target);
+                        }
+                        
+                        // If still NaN, keep as strings but convert to a hash-like number
+                        if (isNaN(sourceNum)) {
+                            sourceNum = stringToNumber(source);
+                        }
+                        if (isNaN(targetNum)) {
+                            targetNum = stringToNumber(target);
+                        }
+                        
+                        if (!isNaN(sourceNum) && !isNaN(targetNum) && sourceNum !== targetNum) {
+                            edges.push([Math.floor(sourceNum), Math.floor(targetNum)]);
                         }
                     } catch (e) {
                         console.warn(`Could not parse line ${i + 1}: ${line}`);
@@ -615,6 +718,17 @@
             }
 
             return edges;
+        }
+
+        // Helper function to convert strings to numbers
+        function stringToNumber(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return Math.abs(hash);
         }
 
         function parseGMLFormat(text) {
@@ -682,6 +796,46 @@
                 </div>
             `;
             edgeStats.textContent = 'Ready to parse';
+        }
+
+        function downloadEdgeList() {
+            if (parsedEdges.length === 0) {
+                showMessage('error', 'No data to download. Please parse a file first.');
+                return;
+            }
+
+            try {
+                // Create the content for the file
+                const content = parsedEdges.map(([source, target]) => `${source} ${target}`).join('\n');
+                
+                // Create a blob with the content
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                
+                // Create a temporary URL for the blob
+                const url = URL.createObjectURL(blob);
+                
+                // Create a temporary anchor element and trigger download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = originalFileName ? `${originalFileName}_parsed.txt` : 'parsed_edge_list.txt';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                
+                // Trigger the download
+                a.click();
+                
+                // Clean up after a short delay
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                // Show success message
+                showMessage('success', `Downloaded ${parsedEdges.length} edges as ${a.download}`);
+            } catch (error) {
+                console.error('Download failed:', error);
+                showMessage('error', 'Download failed. Please try again.');
+            }
         }
     </script>
 </body>
