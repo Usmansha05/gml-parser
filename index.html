@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GML Edge List Parser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0F0F0F;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 90% 10%, rgba(255, 184, 108, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 10% 90%, rgba(132, 250, 176, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%);
+            background-size: 
+                800px 600px,
+                700px 500px,
+                900px 700px,
+                600px 400px,
+                1000px 800px,
+                100% 100%;
+            background-position:
+                0% 0%,
+                100% 100%,
+                50% 50%,
+                80% 20%,
+                20% 80%,
+                0% 0%;
+            animation: backgroundShift 20s ease-in-out infinite;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 255, 255, 0.01) 2px,
+                    rgba(255, 255, 255, 0.01) 4px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 255, 255, 0.01) 2px,
+                    rgba(255, 255, 255, 0.01) 4px
+                );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: sparkle 40s linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% {
+                background-position:
+                    0% 0%,
+                    100% 100%,
+                    50% 50%,
+                    80% 20%,
+                    20% 80%,
+                    0% 0%;
+            }
+            25% {
+                background-position:
+                    10% 10%,
+                    90% 90%,
+                    60% 40%,
+                    70% 30%,
+                    30% 70%,
+                    0% 0%;
+            }
+            50% {
+                background-position:
+                    20% 20%,
+                    80% 80%,
+                    40% 60%,
+                    60% 40%,
+                    40% 60%,
+                    0% 0%;
+            }
+            75% {
+                background-position:
+                    10% 30%,
+                    90% 70%,
+                    30% 70%,
+                    90% 10%,
+                    10% 90%,
+                    0% 0%;
+            }
+        }
+
+        @keyframes sparkle {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50px, -50px) rotate(360deg);
+                opacity: 0.5;
+            }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px) saturate(180%);
+            border-radius: 28px;
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            padding: 50px;
+            max-width: 900px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.8) 20%, 
+                rgba(255, 255, 255, 0.8) 80%, 
+                transparent
+            );
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        .container::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, 
+                rgba(120, 119, 198, 0.3),
+                rgba(255, 119, 198, 0.3),
+                rgba(120, 219, 255, 0.3),
+                rgba(255, 184, 108, 0.3),
+                rgba(132, 250, 176, 0.3)
+            );
+            background-size: 300% 300%;
+            border-radius: 30px;
+            animation: gradientShift 8s ease infinite;
+            z-index: -1;
+            filter: blur(1px);
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%,
+                #f0f4ff 25%,
+                #e6f0ff 50%,
+                #dbeafe 75%,
+                #bfdbfe 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+            animation: titleGlow 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            border: 3px dashed #cbd5e0;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transition: left 0.5s;
+        }
+
+        .file-label:hover::before {
+            left: 100%;
+        }
+
+        .file-label:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-text {
+            color: #4a5568;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .upload-subtext {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .file-name {
+            margin-top: 20px;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, 
+                rgba(72, 187, 120, 0.9) 0%, 
+                rgba(56, 161, 105, 0.9) 100%
+            );
+            backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 
+                0 8px 25px rgba(72, 187, 120, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .parse-btn {
+            background: linear-gradient(135deg, 
+                rgba(102, 126, 234, 0.9) 0%, 
+                rgba(118, 75, 162, 0.9) 100%
+            );
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 18px 45px;
+            border-radius: 30px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 10px 30px rgba(102, 126, 234, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            display: block;
+            margin: 25px auto;
+            opacity: 0.6;
+            transform: scale(0.95);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .parse-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent
+            );
+            transition: left 0.6s;
+        }
+
+        .parse-btn:enabled {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .parse-btn:enabled:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 
+                0 20px 40px rgba(102, 126, 234, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .parse-btn:enabled:hover::before {
+            left: 100%;
+        }
+
+        .parse-btn:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .results-title {
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .edge-count {
+            background: linear-gradient(135deg, 
+                rgba(66, 153, 225, 0.9) 0%, 
+                rgba(49, 130, 206, 0.9) 100%
+            );
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        .output-box {
+            background: linear-gradient(145deg, 
+                rgba(26, 32, 44, 0.95) 0%, 
+                rgba(45, 55, 72, 0.95) 100%
+            );
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 25px;
+            height: 320px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                inset 0 2px 10px rgba(0, 0, 0, 0.4),
+                0 8px 25px rgba(0, 0, 0, 0.3);
+            display: none;
+            position: relative;
+        }
+
+        .output-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent
+            );
+        }
+
+        .output-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-box::-webkit-scrollbar-track {
+            background: #2d3748;
+            border-radius: 4px;
+        }
+
+        .output-box::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 4px;
+        }
+
+        .output-line {
+            padding: 2px 0;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .output-line:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-left-color: #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-weight: 600;
+            display: none;
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-weight: 600;
+            display: none;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .file-label {
+                padding: 20px 15px;
+            }
+            
+            .upload-icon {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GML Edge List Parser</h1>
+        <p class="subtitle">Upload your GML file and extract edge relationships with style</p>
+        
+        <div class="upload-section">
+            <div class="file-upload">
+                <input type="file" id="gmlFile" class="file-input" accept=".gml" />
+                <label for="gmlFile" class="file-label">
+                    <div>
+                        <div class="upload-icon">📊</div>
+                        <div class="upload-text">Drop your GML file here</div>
+                        <div class="upload-subtext">or click to browse</div>
+                    </div>
+                </label>
+            </div>
+            <div id="fileName" class="file-name"></div>
+        </div>
+
+        <button id="parseBtn" class="parse-btn" disabled>Parse GML File</button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Processing your file...</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="results-section">
+            <div class="results-header" id="resultsHeader" style="display: none;">
+                <div class="results-title">Edge List Output</div>
+                <div class="edge-count" id="edgeCount">0 edges</div>
+            </div>
+            <div class="output-box" id="outputBox"></div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('gmlFile');
+        const fileName = document.getElementById('fileName');
+        const parseBtn = document.getElementById('parseBtn');
+        const outputBox = document.getElementById('outputBox');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const resultsHeader = document.getElementById('resultsHeader');
+        const edgeCount = document.getElementById('edgeCount');
+
+        let currentFile = null;
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                currentFile = file;
+                fileName.textContent = `Selected: ${file.name}`;
+                fileName.style.display = 'block';
+                parseBtn.disabled = false;
+                hideMessages();
+            }
+        });
+
+        parseBtn.addEventListener('click', function() {
+            if (!currentFile) return;
+
+            showLoading();
+            hideMessages();
+            outputBox.style.display = 'none';
+            resultsHeader.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const edges = parseGMLEdgeList(content);
+                    displayResults(edges);
+                    showSuccess(`Successfully parsed ${edges.length} edges from ${currentFile.name}`);
+                } catch (error) {
+                    showError(`Error parsing file: ${error.message}`);
+                }
+                hideLoading();
+            };
+
+            reader.onerror = function() {
+                showError('Error reading file. Please try again.');
+                hideLoading();
+            };
+
+            reader.readAsText(currentFile);
+        });
+
+        function parseGMLEdgeList(content) {
+            const edges = [];
+            const lines = content.split('\n');
+            let inEdgeBlock = false;
+            let currentEdge = {};
+
+            for (let line of lines) {
+                line = line.trim();
+
+                // Detect start of an edge block
+                if (line.startsWith('edge')) {
+                    inEdgeBlock = true;
+                    currentEdge = {};
+                    continue;
+                }
+
+                // Detect end of an edge block
+                if (inEdgeBlock && line === ']') {
+                    if ('source' in currentEdge && 'target' in currentEdge) {
+                        edges.push([currentEdge.source, currentEdge.target]);
+                    }
+                    inEdgeBlock = false;
+                    continue;
+                }
+
+                // Parse edge attributes (only source and target)
+                if (inEdgeBlock) {
+                    const parts = line.split(/\s+/);
+                    if (parts.length >= 2) {
+                        const key = parts[0];
+                        const value = parts[1];
+                        if (key === 'source' || key === 'target') {
+                            currentEdge[key] = parseInt(value);
+                        }
+                    }
+                }
+            }
+
+            return edges;
+        }
+
+        function displayResults(edges) {
+            if (edges.length === 0) {
+                showError('No edges found in the GML file.');
+                return;
+            }
+
+            outputBox.innerHTML = '';
+            edges.forEach(([source, target]) => {
+                const line = document.createElement('div');
+                line.className = 'output-line';
+                line.textContent = `${source} ${target}`;
+                outputBox.appendChild(line);
+            });
+
+            edgeCount.textContent = `${edges.length} edge${edges.length !== 1 ? 's' : ''}`;
+            resultsHeader.style.display = 'flex';
+            outputBox.style.display = 'block';
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // Drag and drop functionality
+        const fileLabel = document.querySelector('.file-label');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            fileLabel.style.borderColor = '#667eea';
+            fileLabel.style.background = 'linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%)';
+        }
+
+        function unhighlight() {
+            fileLabel.style.borderColor = '#cbd5e0';
+            fileLabel.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
+        }
+
+        fileLabel.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                fileInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        }
+    </script>
+</body>
+</html>
